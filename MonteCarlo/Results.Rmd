@@ -21,53 +21,46 @@ Quandl.api_key('1ywuwWFWbtaziA2GcaRU')
 ```
 
 *Data*
-https://www.quandl.com/data/EOD-End-of-Day-US-Stock-Prices
+https://www.quandl.com/data/EURONEXT-Euronext-Stock-Exchange
 
 
-## Einleitung
-Bei diesem Dokument geht es um die Monte Carlo Simulation von den Aktienkursen von Microsoft, Intel und Apple am Ende des Tages (Closing)
+## Introduction
+This document goes through a Monte Carlo Simulation of dtelekom, Intel and apple's closing stock prices.
 \newpage
 
 
-## Berechnung der Standardabweichung und des Mittelwertes
-Für die Standardabweichung und den Mittelwert werden die prozentualen renditen über den einzelnen Tagen gesammelt. Die Prozentualen renditen lassen sich über das API Quandle ausgeben. Folglich können die Standardabweichung und der Mittelwert daraus berechnet werden.
-### Microsoft
-#### Die Prozentuale Tagesrenditen
-Hier ersichtlich ist die Prozentuale Tagesrenditen über die Zeitperiode
+## Calculation of standard deviation and mean
+For the standard deviation we collect the percentuel rate values. These values can be optained directly with quandle.
+Then we can calculate standard deviation and mean of those rate values.
+
+### dtelekom
+#### Percentual rates
+In this graph we can see the percentual daily rates over a year.
 ```{r}
-microsoftclosing = Quandl("EOD/MSFT",start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Close"]
-plot(microsoftclosing,ylab="%",xlab="Time",main="Microsoft Stock in [%]")
-microsoftsd = sd(microsoftclosing)
-microsoftmean = mean(microsoftclosing)
+dtelekomclosing = Quandl('EURONEXT/DTEL',start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Last"]
+plot(dtelekomclosing,ylab="%",xlab="Time",main="dtelekom Stock in [%]")
+dtelekomsd = sd(dtelekomclosing)
+dtelekommean = mean(dtelekomclosing)
 ```
 
-#### Mittelwert und die Standard abweichung
+#### Arithmetic mean and stadard deviation
 ```{r}
-microsoftmatrix = matrix(c(microsoftsd,microsoftmean),ncol=2,byrow=TRUE)
-colnames(microsoftmatrix) = c("Standard deviation","mean")
-print.table(microsoftmatrix)
+dtelekommatrix = matrix(c(dtelekomsd,dtelekommean),ncol=2,byrow=TRUE)
+colnames(dtelekommatrix) = c("Standard deviation","mean")
+print.table(dtelekommatrix)
 ```
 ```{r }
-Microsoft = Quandl('EOD/MSFT', start_date='2017-06-04', end_date='2018-06-04')
-ggplot(Microsoft, aes(Date, Close,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Microsoft closing Stock", y="Price in $", caption="Source: QUOTEMEDIA")
+dtelekom = Quandl('EURONEXT/DTEL', start_date='2017-06-04', end_date='2018-06-04')
+ggplot(dtelekom, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="dtelekom closing Stock", y="Price in $", caption="Source: EURONEXT")
 ```
 
 #### Brownian Motion
-get percentual changes
-```{r}
-microsoftdata = Quandl('EOD/MSFT', start_date='2017-06-04', end_date='2018-06-04', transform = "rdiff")
-```
-
-get only closing stock price
-```{r}
-microsoftclosing = microsoftdata$Close
-```
 
 ```{r}
 nSim = 1000
-nDays = 365
-S0 = head(Quandl('EOD/MSFT', start_date='2017-06-04', end_date='2018-06-04'), n=1)
-S0 = S0$Close
+nDays = 250
+S0 = head(Quandl('EURONEXT/DTEL', start_date='2017-06-04', end_date='2018-06-04'), n=1)
+S0 = S0$Last
 S = matrix(0,nrow=nDays,ncol=nSim)
 ```
 ```{r}
@@ -76,17 +69,19 @@ for (i in 1:nSim) {
   SVec[1] = S0
   for(j in 2:nDays) {
     pastDay = SVec[j-1]
-    DeltaS = microsoftmean*pastDay + microsoftsd*pastDay*rnorm(1)
+    DeltaS = dtelekommean*pastDay + dtelekomsd*pastDay*rnorm(1)
     SVec[j] = pastDay+DeltaS
   }
   S[,i] = SVec
 }
+
+
 ```
 
-```{r,echo=FALSE}
-#Die Berechnung der Simulations grenzen
-mean = microsoftmean * nDays
-sigma = microsoftsd * sqrt(nDays)
+```{r}
+# Calculation of simulation areas
+mean = dtelekommean * nDays
+sigma = dtelekomsd * sqrt(nDays)
 t = seq(from=0,to=1,length.out=nDays)
 meanBnd = vector(length = nDays); upBnd = vector(length = nDays); loBnd = vector(length = nDays); test = vector(length = nDays)
 for(i in 0:nDays){
@@ -97,35 +92,34 @@ for(i in 0:nDays){
 ```
 
 
-Das Simulation grafisch dargestellt. Die Blauen Linien kennzeichnen die grenzen der Simulationen
-```{r,echo=FALSE}
-#Darstellung der Graphen
-matplot(S,type='l',col=1:100,ylab='Microsoft Stock $',xlab='Days',main='Simulation')
+Presentation of the simulation.
+```{r}
+matplot(S,type='l',col=1:100,ylab='dtelekom Stock $',xlab='Days',main='Simulation')
 matlines(loBnd,lwd=3,col="blue")
 matlines(upBnd,lwd=3,col="blue")
 matlines(meanBnd,lwd=3,col="blue")
 ```
 
-Berechnung der Longnormalen Distribution
+Calculation of the Longnormal Distribution
 ```{r}
-lnMean = S0*exp(mu*nDays)
-lnSD = S0*exp(mu*nDays)*sqrt(exp((sigma^2)*nDays)-1)
+lnMean = S0*exp(dtelekommean*nDays)
+lnSD = S0*exp(dtelekommean*nDays)*sqrt(exp((dtelekomsd^2)*nDays)-1)
 ```
 
 *Describe*
 ```{r}
-cat(lnMean,mean(S[nDays,]))
+cat('OptionPrice',mean(S[nDays,]))
 ```
 
 *Describe*
 ```{r}
-cat(lnSD,sd(S[nDays,]))
+cat('Standardabweichung',lnSD,sd(S[nDays,]))
 ```
 
-Plotten der Distribution
+Presentation of the Simulation distribution
 ```{r}
-meanOfLog = log(S0) + (mu-(sigma^2)/2)*nDays
-sdOfLog = sigma*sqrt(nDays)
+meanOfLog = log(S0) + (dtelekommean-(dtelekomsd^2)/2)*nDays
+sdOfLog = dtelekomsd*sqrt(nDays)
 priceGrid = seq(0,lnMean+6*lnSD,length=10000)
 theoreticalDens = dlnorm(priceGrid,meanOfLog,sdOfLog)
 empiricalDens = density(S[nDays,])
@@ -133,13 +127,22 @@ empiricalDens = density(S[nDays,])
 plot(priceGrid,theoreticalDens,type='l',xlab='Prices',ylab='Density')
 lines(empiricalDens,col='blue')
 ```
+### Options Price put and call
+```{r}
+
+```
+
+
+### Black-Scholes-Model
+
+```{r}
+
+currentStockPrice = S0
+sigma = dtelekomsd
 
 
 
-'EOD/AAPL'
-'EOD/INTC'
-
-
+```
 
 
 
