@@ -1,0 +1,20 @@
+---
+title: "Results"
+output: github_document
+---
+
+
+Load Libraries
+```{r}
+library('ggplot2')
+library('forecast')
+library('tseries')
+```
+Load Data
+```{r}
+daily_data = read.csv('crimedataset.csv', header=TRUE, stringsAsFactors=FALSE)
+daily_data$Year = as.Date(as.character(daily_data$Year), "%Y")
+daily_data$Violent.crime = gsub(",", "", daily_data$Violent.crime)
+ggplot(daily_data, aes(Year, Violent.crime, group = 1)) + geom_line() + scale_x_date('Year')  + ylab("FBICrimes")
+```
+
