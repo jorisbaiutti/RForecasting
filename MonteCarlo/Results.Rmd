@@ -10,14 +10,14 @@ output:
 
 
 
-### Load stuff
+### Load Libraries
 ```{r error=FALSE, warning=FALSE, message=FALSE}
 library(Quandl)
 library(ggplot2)
+library(fOptions)
 ```
 
-Api key: 1ywuwWFWbtaziA2GcaRU
-```{r}
+```{r echo=FALSE}
 Quandl.api_key('1ywuwWFWbtaziA2GcaRU')
 ```
 
@@ -31,14 +31,15 @@ This document goes through a Monte Carlo Simulation of Deutsche Telekom, Volkswa
 
 
 ## Calculation of standard deviation and mean
-For the standard deviation we collect the percentuel rate values. These values can be optained directly with quandle.
+For the standard deviation we collect the percentual rate values. These values can be optained directly with quandle.
 Then we can calculate standard deviation and mean of those rate values.
 
 ### Deutsche Telekom
 #### Percentual rates
 In this graph we can see the percentual daily rates over a year.
 ```{r}
-dtelekomclosing = Quandl('EURONEXT/DTEL',start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Last"]
+dtelekomclosing = Quandl('EURONEXT/DTEL',start_date='2017-06-04', type='zoo',
+                         end_date='2018-06-04',transform = "rdiff")[,"Last"]
 plot(dtelekomclosing,ylab="%",xlab="Time",main="dtelekom Stock in [%]")
 dtelekomsd = sd(dtelekomclosing)
 dtelekommean = mean(dtelekomclosing)
@@ -54,7 +55,9 @@ print.table(dtelekommatrix)
 
 ```{r }
 dtelekom = Quandl('EURONEXT/DTEL', start_date='2017-06-04', end_date='2018-06-04')
-ggplot(dtelekom, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Deutsche Telekom closing Stock", y="Price in $", caption="Source: EURONEXT")
+ggplot(dtelekom, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + 
+geom_smooth(method = "loess", color="Green") + 
+labs(title="Deutsche Telekom closing Stock", y="Price in $", caption="Source: EURONEXT")
 ```
 
 #### Brownian Motion
@@ -84,13 +87,16 @@ for (i in 1:nSim) {
 Calculation of SimulationS bOundaries
 ```{r}
 mean = dtelekommean * nDays
-sigma = dtelekomsd * sqrt(nDays)
+dtelekomsigma = dtelekomsd * sqrt(nDays)
 t = seq(from=0,to=1,length.out=nDays)
-meanBnd = vector(length = nDays); upBnd = vector(length = nDays); loBnd = vector(length = nDays); test = vector(length = nDays)
+meanBnd = vector(length = nDays) 
+upBnd = vector(length = nDays) 
+loBnd = vector(length = nDays) 
+test = vector(length = nDays)
 for(i in 0:nDays){
-  meanBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i])
-  upBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * 2.5 * sqrt(t[i])))
-  loBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * -2.5 * sqrt(t[i])))
+  meanBnd[i] = S0*exp((( mean-dtelekomsigma^2/2 ))*t[i])
+  upBnd[i] = S0*exp((( mean-dtelekomsigma^2/2 ))*t[i] + (dtelekomsigma * 2.5 * sqrt(t[i])))
+  loBnd[i] = S0*exp((( mean-dtelekomsigma^2/2 ))*t[i] + (dtelekomsigma * -2.5 * sqrt(t[i])))
 }
 ```
 
@@ -131,12 +137,29 @@ plot(priceGrid,theoreticalDens,type='l',xlab='Prices',ylab='Density')
 lines(empiricalDens,col='blue')
 ```
 
+#### Call Put Options price Black Scholes
+```{r}
+openingS = head(Quandl('EURONEXT/DTEL', start_date='2017-06-04', end_date='2018-06-04'), n=1)
+S = openingS$Open
+strikecall = 15
+optionCall = GBSOption(TypeFlag = "c", S, strikecall, 1/12, r = 0.03, b = 0.03, dtelekomsigma)
+cat("OptionCall Price",optionCall@price)
+
+strikeput = 15
+optionPut = GBSOption(TypeFlag = "p", S, strikeput, 1/12, r = 0.03, b = 0.03, dtelekomsigma)
+cat("\nOptionPut Price",optionPut@price)
+
+
+
+```
+
 
 ### Volkswagen
 #### Percentual rates
 In this graph we can see the percentual daily rates over a year.
 ```{r}
-volkswagenclosing = Quandl('EURONEXT/VWA',start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Last"]
+volkswagenclosing = Quandl('EURONEXT/VWA',start_date='2017-06-04', type='zoo',end_date='2018-06-04',
+                           transform = "rdiff")[,"Last"]
 plot(volkswagenclosing,ylab="%",xlab="Time",main="Volkswagen Stock in [%]")
 volkswagensd = sd(volkswagenclosing)
 volkswagenmean = mean(volkswagenclosing)
@@ -152,7 +175,9 @@ print.table(volkswagenmatrix)
 
 ```{r }
 volkswagen = Quandl('EURONEXT/VWA', start_date='2017-06-04', end_date='2018-06-04')
-ggplot(volkswagen, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Volkswagen closing Stock", y="Price in $", caption="Source: EURONEXT")
+ggplot(volkswagen, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + 
+geom_smooth(method = "loess", color="Green") + labs(title="Volkswagen closing Stock", 
+                                                y="Price in $", caption="Source: EURONEXT")
 ```
 
 #### Brownian Motion
@@ -182,13 +207,16 @@ for (i in 1:nSim) {
 Calculation of SimulationS bOundaries
 ```{r}
 mean = volkswagenmean * nDays
-sigma = volkswagensd * sqrt(nDays)
+volkswagensigma = volkswagensd * sqrt(nDays)
 t = seq(from=0,to=1,length.out=nDays)
-meanBnd = vector(length = nDays); upBnd = vector(length = nDays); loBnd = vector(length = nDays); test = vector(length = nDays)
+meanBnd = vector(length = nDays) 
+upBnd = vector(length = nDays) 
+loBnd = vector(length = nDays)
+test = vector(length = nDays)
 for(i in 0:nDays){
-  meanBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i])
-  upBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * 2.5 * sqrt(t[i])))
-  loBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * -2.5 * sqrt(t[i])))
+  meanBnd[i] = S0*exp((( mean-volkswagensigma^2/2 ))*t[i])
+  upBnd[i] = S0*exp((( mean-volkswagensigma^2/2 ))*t[i] + (volkswagensigma * 2.5 * sqrt(t[i])))
+  loBnd[i] = S0*exp((( mean-volkswagensigma^2/2 ))*t[i] + (volkswagensigma * -2.5 * sqrt(t[i])))
 }
 ```
 
@@ -229,12 +257,28 @@ plot(priceGrid,theoreticalDens,type='l',xlab='Prices',ylab='Density')
 lines(empiricalDens,col='blue')
 ```
 
+#### Call Put Options price Black Scholes
+```{r}
+openingS = head(Quandl('EURONEXT/VWA', start_date='2017-06-04', end_date='2018-06-04'), n=1)
+S = openingS$Open
+strikecall = 180
+optionCall = GBSOption(TypeFlag = "c", S, strikecall, 1/12, r = 0.03, b = 0.03, volkswagensigma)
+cat("OptionCall Price",optionCall@price)
+
+strikeput = 180
+optionPut = GBSOption(TypeFlag = "p", S, strikeput, 1/12, r = 0.03, b = 0.03, volkswagensigma)
+cat("\nOptionPut Price",optionPut@price)
+
+
+
+```
 
 ### Airbus
 #### Percentual rates
 In this graph we can see the percentual daily rates over a year.
 ```{r}
-Airbusclosing = Quandl('EURONEXT/AIR',start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Last"]
+Airbusclosing = Quandl('EURONEXT/AIR',start_date='2017-06-04', type='zoo',
+                       end_date='2018-06-04',transform = "rdiff")[,"Last"]
 plot(Airbusclosing,ylab="%",xlab="Time",main="Airbus Stock in [%]")
 Airbussd = sd(Airbusclosing)
 Airbusmean = mean(Airbusclosing)
@@ -250,7 +294,9 @@ print.table(Airbusmatrix)
 
 ```{r }
 Airbus = Quandl('EURONEXT/AIR', start_date='2017-06-04', end_date='2018-06-04')
-ggplot(Airbus, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Airbus closing Stock", y="Price in $", caption="Source: EURONEXT")
+ggplot(Airbus, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + 
+geom_smooth(method = "loess", color="Green") + labs(title="Airbus closing Stock", 
+                                            y="Price in $", caption="Source: EURONEXT")
 ```
 
 #### Brownian Motion
@@ -280,13 +326,16 @@ for (i in 1:nSim) {
 Calculation of SimulationS bOundaries
 ```{r}
 mean = Airbusmean * nDays
-sigma = Airbussd * sqrt(nDays)
+Airbussigma = Airbussd * sqrt(nDays)
 t = seq(from=0,to=1,length.out=nDays)
-meanBnd = vector(length = nDays); upBnd = vector(length = nDays); loBnd = vector(length = nDays); test = vector(length = nDays)
+meanBnd = vector(length = nDays) 
+upBnd = vector(length = nDays) 
+loBnd = vector(length = nDays)
+test = vector(length = nDays)
 for(i in 0:nDays){
-  meanBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i])
-  upBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * 2.5 * sqrt(t[i])))
-  loBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * -2.5 * sqrt(t[i])))
+  meanBnd[i] = S0*exp((( mean-Airbussigma^2/2 ))*t[i])
+  upBnd[i] = S0*exp((( mean-Airbussigma^2/2 ))*t[i] + (Airbussigma * 2.5 * sqrt(t[i])))
+  loBnd[i] = S0*exp((( mean-Airbussigma^2/2 ))*t[i] + (Airbussigma * -2.5 * sqrt(t[i])))
 }
 ```
 
@@ -328,7 +377,21 @@ lines(empiricalDens,col='blue')
 ```
 
 
+#### Call Put Options price Black Scholes
+```{r}
+openingS = head(Quandl('EURONEXT/AIR', start_date='2017-06-04', end_date='2018-06-04'), n=1)
+S = openingS$Open
+strikecall = 110
+optionCall = GBSOption(TypeFlag = "c", S, strikecall, 1/12, r = 0.03, b = 0.03, Airbussigma)
+cat("OptionCall Price",optionCall@price)
 
+strikeput = 110
+optionPut = GBSOption(TypeFlag = "p", S, strikeput, 1/12, r = 0.03, b = 0.03, Airbussigma)
+cat("\nOptionPut Price",optionPut@price)
+
+
+
+```
 
 
 
