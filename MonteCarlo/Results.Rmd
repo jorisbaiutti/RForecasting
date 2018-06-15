@@ -1,8 +1,9 @@
 ---
 title: "Documentation"
-author: "Joris Baiutti"
+author: "Joris Baiutti & Claudio Polo"
 date: "June 4, 2018"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -25,7 +26,7 @@ https://www.quandl.com/data/EURONEXT-Euronext-Stock-Exchange
 
 
 ## Introduction
-This document goes through a Monte Carlo Simulation of dtelekom, Intel and apple's closing stock prices.
+This document goes through a Monte Carlo Simulation of Deutsche Telekom, Volkswagen and Airbus closing stock prices.
 \newpage
 
 
@@ -33,7 +34,7 @@ This document goes through a Monte Carlo Simulation of dtelekom, Intel and apple
 For the standard deviation we collect the percentuel rate values. These values can be optained directly with quandle.
 Then we can calculate standard deviation and mean of those rate values.
 
-### dtelekom
+### Deutsche Telekom
 #### Percentual rates
 In this graph we can see the percentual daily rates over a year.
 ```{r}
@@ -43,15 +44,17 @@ dtelekomsd = sd(dtelekomclosing)
 dtelekommean = mean(dtelekomclosing)
 ```
 
-#### Arithmetic mean and stadard deviation
+#### Arithmetic mean and standard deviation
 ```{r}
 dtelekommatrix = matrix(c(dtelekomsd,dtelekommean),ncol=2,byrow=TRUE)
 colnames(dtelekommatrix) = c("Standard deviation","mean")
 print.table(dtelekommatrix)
 ```
+
+
 ```{r }
 dtelekom = Quandl('EURONEXT/DTEL', start_date='2017-06-04', end_date='2018-06-04')
-ggplot(dtelekom, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="dtelekom closing Stock", y="Price in $", caption="Source: EURONEXT")
+ggplot(dtelekom, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Deutsche Telekom closing Stock", y="Price in $", caption="Source: EURONEXT")
 ```
 
 #### Brownian Motion
@@ -78,8 +81,8 @@ for (i in 1:nSim) {
 
 ```
 
+Calculation of SimulationS bOundaries
 ```{r}
-# Calculation of simulation areas
 mean = dtelekommean * nDays
 sigma = dtelekomsd * sqrt(nDays)
 t = seq(from=0,to=1,length.out=nDays)
@@ -92,12 +95,12 @@ for(i in 0:nDays){
 ```
 
 
-Presentation of the simulation.
+Presentation of the simulation.Green Line is the Mean of all simulations and the blue lines are the boundaries
 ```{r}
 matplot(S,type='l',col=1:100,ylab='dtelekom Stock $',xlab='Days',main='Simulation')
 matlines(loBnd,lwd=3,col="blue")
 matlines(upBnd,lwd=3,col="blue")
-matlines(meanBnd,lwd=3,col="blue")
+matlines(meanBnd,lwd=4,col="green")
 ```
 
 Calculation of the Longnormal Distribution
@@ -106,17 +109,17 @@ lnMean = S0*exp(dtelekommean*nDays)
 lnSD = S0*exp(dtelekommean*nDays)*sqrt(exp((dtelekomsd^2)*nDays)-1)
 ```
 
-*Describe*
+Mean over a year over all Simulations
 ```{r}
-cat('OptionPrice',mean(S[nDays,]))
+cat('Mean',mean(S[nDays,]))
 ```
 
-*Describe*
+Standard deviation over a year over all Simulations
 ```{r}
-cat('Standardabweichung',lnSD,sd(S[nDays,]))
+cat('Standard Deviation',lnSD,sd(S[nDays,]))
 ```
 
-Presentation of the Simulation distribution
+Presentation of the longnormal distribution of theoretical density and empirical density
 ```{r}
 meanOfLog = log(S0) + (dtelekommean-(dtelekomsd^2)/2)*nDays
 sdOfLog = dtelekomsd*sqrt(nDays)
@@ -127,23 +130,202 @@ empiricalDens = density(S[nDays,])
 plot(priceGrid,theoreticalDens,type='l',xlab='Prices',ylab='Density')
 lines(empiricalDens,col='blue')
 ```
-### Options Price put and call
-```{r}
 
+
+### Volkswagen
+#### Percentual rates
+In this graph we can see the percentual daily rates over a year.
+```{r}
+volkswagenclosing = Quandl('EURONEXT/VWA',start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Last"]
+plot(volkswagenclosing,ylab="%",xlab="Time",main="Volkswagen Stock in [%]")
+volkswagensd = sd(volkswagenclosing)
+volkswagenmean = mean(volkswagenclosing)
+```
+
+#### Arithmetic mean and standard deviation
+```{r}
+volkswagenmatrix = matrix(c(volkswagensd,volkswagenmean),ncol=2,byrow=TRUE)
+colnames(volkswagenmatrix) = c("Standard deviation","mean")
+print.table(volkswagenmatrix)
 ```
 
 
-### Black-Scholes-Model
+```{r }
+volkswagen = Quandl('EURONEXT/VWA', start_date='2017-06-04', end_date='2018-06-04')
+ggplot(volkswagen, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Volkswagen closing Stock", y="Price in $", caption="Source: EURONEXT")
+```
+
+#### Brownian Motion
 
 ```{r}
-
-currentStockPrice = S0
-sigma = dtelekomsd
-
+nSim = 1000
+nDays = 250
+S0 = head(Quandl('EURONEXT/VWA', start_date='2017-06-04', end_date='2018-06-04'), n=1)
+S0 = S0$Last
+S = matrix(0,nrow=nDays,ncol=nSim)
+```
+```{r}
+for (i in 1:nSim) {
+  SVec = rep(0, nDays)
+  SVec[1] = S0
+  for(j in 2:nDays) {
+    pastDay = SVec[j-1]
+    DeltaS = volkswagenmean*pastDay + volkswagensd*pastDay*rnorm(1)
+    SVec[j] = pastDay+DeltaS
+  }
+  S[,i] = SVec
+}
 
 
 ```
 
+Calculation of SimulationS bOundaries
+```{r}
+mean = volkswagenmean * nDays
+sigma = volkswagensd * sqrt(nDays)
+t = seq(from=0,to=1,length.out=nDays)
+meanBnd = vector(length = nDays); upBnd = vector(length = nDays); loBnd = vector(length = nDays); test = vector(length = nDays)
+for(i in 0:nDays){
+  meanBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i])
+  upBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * 2.5 * sqrt(t[i])))
+  loBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * -2.5 * sqrt(t[i])))
+}
+```
+
+
+Presentation of the simulation.Green Line is the Mean of all simulations and the blue lines are the boundaries
+```{r}
+matplot(S,type='l',col=1:100,ylab='Volkswagen Stock $',xlab='Days',main='Simulation')
+matlines(loBnd,lwd=3,col="blue")
+matlines(upBnd,lwd=3,col="blue")
+matlines(meanBnd,lwd=4,col="green")
+```
+
+Calculation of the Longnormal Distribution
+```{r}
+lnMean = S0*exp(volkswagenmean*nDays)
+lnSD = S0*exp(volkswagenmean*nDays)*sqrt(exp((volkswagensd^2)*nDays)-1)
+```
+
+Mean over a year over all Simulations
+```{r}
+cat('Mean',mean(S[nDays,]))
+```
+
+Standard deviation over a year over all Simulations
+```{r}
+cat('Standard Deviation',lnSD,sd(S[nDays,]))
+```
+
+Presentation of the longnormal distribution of theoretical density and empirical density
+```{r}
+meanOfLog = log(S0) + (volkswagenmean-(volkswagensd^2)/2)*nDays
+sdOfLog = volkswagensd*sqrt(nDays)
+priceGrid = seq(0,lnMean+6*lnSD,length=10000)
+theoreticalDens = dlnorm(priceGrid,meanOfLog,sdOfLog)
+empiricalDens = density(S[nDays,])
+
+plot(priceGrid,theoreticalDens,type='l',xlab='Prices',ylab='Density')
+lines(empiricalDens,col='blue')
+```
+
+
+### Airbus
+#### Percentual rates
+In this graph we can see the percentual daily rates over a year.
+```{r}
+Airbusclosing = Quandl('EURONEXT/AIR',start_date='2017-06-04', type='zoo',end_date='2018-06-04',transform = "rdiff")[,"Last"]
+plot(Airbusclosing,ylab="%",xlab="Time",main="Airbus Stock in [%]")
+Airbussd = sd(Airbusclosing)
+Airbusmean = mean(Airbusclosing)
+```
+
+#### Arithmetic mean and standard deviation
+```{r}
+Airbusmatrix = matrix(c(Airbussd,Airbusmean),ncol=2,byrow=TRUE)
+colnames(Airbusmatrix) = c("Standard deviation","mean")
+print.table(Airbusmatrix)
+```
+
+
+```{r }
+Airbus = Quandl('EURONEXT/AIR', start_date='2017-06-04', end_date='2018-06-04')
+ggplot(Airbus, aes(Date, Last,)) + geom_line() + geom_smooth(method = "lm") + geom_smooth(method = "loess", color="Green") + labs(title="Airbus closing Stock", y="Price in $", caption="Source: EURONEXT")
+```
+
+#### Brownian Motion
+
+```{r}
+nSim = 1000
+nDays = 250
+S0 = head(Quandl('EURONEXT/AIR', start_date='2017-06-04', end_date='2018-06-04'), n=1)
+S0 = S0$Last
+S = matrix(0,nrow=nDays,ncol=nSim)
+```
+```{r}
+for (i in 1:nSim) {
+  SVec = rep(0, nDays)
+  SVec[1] = S0
+  for(j in 2:nDays) {
+    pastDay = SVec[j-1]
+    DeltaS = Airbusmean*pastDay + Airbussd*pastDay*rnorm(1)
+    SVec[j] = pastDay+DeltaS
+  }
+  S[,i] = SVec
+}
+
+
+```
+
+Calculation of SimulationS bOundaries
+```{r}
+mean = Airbusmean * nDays
+sigma = Airbussd * sqrt(nDays)
+t = seq(from=0,to=1,length.out=nDays)
+meanBnd = vector(length = nDays); upBnd = vector(length = nDays); loBnd = vector(length = nDays); test = vector(length = nDays)
+for(i in 0:nDays){
+  meanBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i])
+  upBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * 2.5 * sqrt(t[i])))
+  loBnd[i] = S0*exp((( mean-sigma^2/2 ))*t[i] + (sigma * -2.5 * sqrt(t[i])))
+}
+```
+
+
+Presentation of the simulation.Green Line is the Mean of all simulations and the blue lines are the boundaries
+```{r}
+matplot(S,type='l',col=1:100,ylab='Airbus Stock $',xlab='Days',main='Simulation')
+matlines(loBnd,lwd=3,col="blue")
+matlines(upBnd,lwd=3,col="blue")
+matlines(meanBnd,lwd=4,col="green")
+```
+
+Calculation of the Longnormal Distribution
+```{r}
+lnMean = S0*exp(Airbusmean*nDays)
+lnSD = S0*exp(Airbusmean*nDays)*sqrt(exp((Airbussd^2)*nDays)-1)
+```
+
+Mean over a year over all Simulations
+```{r}
+cat('Mean',mean(S[nDays,]))
+```
+
+Standard deviation over a year over all Simulations
+```{r}
+cat('Standard Deviation',lnSD,sd(S[nDays,]))
+```
+
+Presentation of the longnormal distribution of theoretical density and empirical density
+```{r}
+meanOfLog = log(S0) + (Airbusmean-(Airbussd^2)/2)*nDays
+sdOfLog = Airbussd*sqrt(nDays)
+priceGrid = seq(0,lnMean+6*lnSD,length=10000)
+theoreticalDens = dlnorm(priceGrid,meanOfLog,sdOfLog)
+empiricalDens = density(S[nDays,])
+
+plot(priceGrid,theoreticalDens,type='l',xlab='Prices',ylab='Density')
+lines(empiricalDens,col='blue')
+```
 
 
 
