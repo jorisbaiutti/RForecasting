@@ -145,9 +145,9 @@ strikecall = 15
 optionCall = GBSOption(TypeFlag = "c", S, strikecall, 1/12, r = 0.03, b = 0.03, dtelekomsigma)
 cat("OptionCall Price",optionCall@price)
 
-strikeput = 15
+strikeput = 12
 optionPut = GBSOption(TypeFlag = "p", S, strikeput, 1/12, r = 0.03, b = 0.03, dtelekomsigma)
-cat("\nOptionPut Price",optionPut@price)
+cat("OptionPut Price",optionPut@price)
 
 
 
@@ -265,9 +265,9 @@ strikecall = 180
 optionCall = GBSOption(TypeFlag = "c", S, strikecall, 1/12, r = 0.03, b = 0.03, volkswagensigma)
 cat("OptionCall Price",optionCall@price)
 
-strikeput = 180
+strikeput = 150
 optionPut = GBSOption(TypeFlag = "p", S, strikeput, 1/12, r = 0.03, b = 0.03, volkswagensigma)
-cat("\nOptionPut Price",optionPut@price)
+cat("OptionPut Price",optionPut@price)
 
 
 
@@ -385,9 +385,9 @@ strikecall = 110
 optionCall = GBSOption(TypeFlag = "c", S, strikecall, 1/12, r = 0.03, b = 0.03, Airbussigma)
 cat("OptionCall Price",optionCall@price)
 
-strikeput = 110
+strikeput = 90
 optionPut = GBSOption(TypeFlag = "p", S, strikeput, 1/12, r = 0.03, b = 0.03, Airbussigma)
-cat("\nOptionPut Price",optionPut@price)
+cat("OptionPut Price",optionPut@price)
 
 
 
